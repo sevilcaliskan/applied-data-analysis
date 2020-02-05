@@ -20,7 +20,6 @@ https://sevilcaliskan.github.io/applied-data-analysis/hw2Ans.html
 https://sevilcaliskan.github.io/applied-data-analysis/hw3Ans.html   
 https://sevilcaliskan.github.io/applied-data-analysis/hw4Ans.html   
 https://sevilcaliskan.github.io/applied-data-analysis/hw5Ans.html   
-https://sevilcaliskan.github.io/applied-data-analysis/hw6Ans.html   
-https://sevilcaliskan.github.io/applied-data-analysis/hw3Ans.html   
+https://sevilcaliskan.github.io/applied-data-analysis/hw6Ans.html      
 https://sevilcaliskan.github.io/applied-data-analysis/midtermAns.html   
 https://sevilcaliskan.github.io/applied-data-analysis/finalAns.html   
