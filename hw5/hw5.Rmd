@@ -2,7 +2,7 @@
 title: |
   Fall 2018\
   IE 451 Applied Data Analysis
-author: "Taught by Savaaþ Dayanýk"
+author: "Taught by SavaaÃ¾ DayanÃ½k"
 pagetitle: IE 451 Applied Data Analysis Fall 2018
 output:
   bookdown::html_document2:
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Assigned on Thursday, November 8, 2018. Due **15:00 on Saturday, November 17, 2018**
 
-**Sevil Çalýþkan**
+**Sevil Ã‡alÃ½Ã¾kan**
 
 **21701423**
 
@@ -74,15 +74,15 @@ iris %>% map_int(function(x) length(unique(x)))
 #   kable_styling(bootstrap_options = "striped", full_width = F )
 ```
   
-Generate 10 random normals for each of µ = -10 ,0 ,10 , and 100 .
+Generate 10 random normals for each of Âµ = -10 ,0 ,10 , and 100 .
 ```{r}
 means <- c(-10, 0, 10, 100)
 randlist <- means %>% map(function(x) rnorm(10, mean = x))  
-names(randlist) <- paste(c("µ = -10", "µ = 0", "µ = 10", "µ = 100")) 
+names(randlist) <- paste(c("Âµ = -10", "Âµ = 0", "Âµ = 10", "Âµ = 100")) 
 randlist
 ```
 ### Exercise 2
-How can you create a single vector that for each column in a data frame indicates whether or not it’s a factor?
+How can you create a single vector that for each column in a data frame indicates whether or not itâ€™s a factor?
 ```{r}
 breslow <- boot::breslow %>% mutate(smoke = factor(smoke))
 head(breslow)
@@ -93,11 +93,11 @@ vec
 **map** creates a list while **map_lgl** creates a vector.
 
 ### Exercise 3
-What happens when you use the map functions on vectors that aren’t lists? What does map(1:5, runif) do? Why?
+What happens when you use the map functions on vectors that arenâ€™t lists? What does map(1:5, runif) do? Why?
 ```{r}
 map(1:5, runif)
 ```
-When we use the map functions on vectors that aren’t lists, map function applies the given function over each column or each element if it is a vector. map(1:5, runif) creates uniformly distributed random numbers between 0 and 1 since the first input element of the runif is n, which is the number of observations to be generated. map function sends each element of the vector c(1:5) by one by and runif is iterated for each of them. Since no other input is given, runif uses default range numbers, which is 0 and 1.
+When we use the map functions on vectors that arenâ€™t lists, map function applies the given function over each column or each element if it is a vector. map(1:5, runif) creates uniformly distributed random numbers between 0 and 1 since the first input element of the runif is n, which is the number of observations to be generated. map function sends each element of the vector c(1:5) by one by and runif is iterated for each of them. Since no other input is given, runif uses default range numbers, which is 0 and 1.
 
 ### Exercise 4
 What does map(-2:2, rnorm, n = 5) do? Why? What does map_dbl(-2:2, rnorm, n = 5) do? Why?
@@ -129,7 +129,7 @@ supplied and must be of the form .x and .y.
 ## Question 2
 Select $m$ numbers between 1 to 100 at random and without replacement. What should the minimum value of $m$ be so that the probability that at least two of selected numbers are consequitive is greater than 0.5?
 
-There are 99 pairs of consecutive numbers since the smaller number in any pair of consecutive numbers in the set {1,2,3,…,100} cannot exceed 99. At least two of selected numbers should be consecutive, so if we substract the non-consecutive sets from all sets, we find the number of subsets that at least two of them are consecutive. Let's say that we will start choosing in an increasing manner. Once we have chosen an $i$ we Will not chose any number from $i-1$ to $1$. After choosing a number we must not choose the next number and thus choosing $r$ numbers, leaves r-1 numbers of choices. $r$ is the number of objects to be chosen. So we leaving $r-1$ numbers, we have $n-(r-1)$ or $n-r+1$ numbers remaining. We can choose $r$ numbers in ${n-r+1}\choose{r}$ ways.
+There are 99 pairs of consecutive numbers since the smaller number in any pair of consecutive numbers in the set {1,2,3,â€¦,100} cannot exceed 99. At least two of selected numbers should be consecutive, so if we substract the non-consecutive sets from all sets, we find the number of subsets that at least two of them are consecutive. Let's say that we will start choosing in an increasing manner. Once we have chosen an $i$ we Will not chose any number from $i-1$ to $1$. After choosing a number we must not choose the next number and thus choosing $r$ numbers, leaves r-1 numbers of choices. $r$ is the number of objects to be chosen. So we leaving $r-1$ numbers, we have $n-(r-1)$ or $n-r+1$ numbers remaining. We can choose $r$ numbers in ${n-r+1}\choose{r}$ ways.
 $$
 P(At \; least \; two\;  of \; selected \; numbers\;  are\;  consecutive) = \frac{Number \; of \; m-element \; subsets \; that \; are \; non-consecutive }{All  \;possible \; m-element \; subsets}
 $$
