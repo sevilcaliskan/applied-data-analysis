@@ -42,7 +42,7 @@ Assigned on Thursday, November 8, 2018. Due **15:00 on Saturday, November 17, 20
 ### Exercise 1
 Write code that uses one of the map functions to:
 
-  Compute the mean of every column in mtcars.
+  Compute the mean of every column in mtcars..
   
 
 ```{r cars}
