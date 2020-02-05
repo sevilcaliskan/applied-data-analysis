@@ -1,0 +1,134 @@
+---
+title: |
+  Fall 2018\
+  IE 451 Applied Data Analysis
+author: "Taught by Savaþ Dayanýk"
+output:
+  bookdown::html_document2:
+    theme: readable
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    code_folding: hide
+  word_document: default
+link-citations: yes
+---
+
+-----
+
+# Homework 2  
+
+Assigned on Friday, October 12 2018 
+
+Due **19:00 PM on 19 October 2018**
+
+**Sevil Çalýþkan**
+
+**21701423**
+
+-----
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+library(DT)
+opts_chunk$set(echo = TRUE, collapse=TRUE)
+```
+
+-----
+## Question 1
+In Question 1, it is given that a grocer can measure the exact weight of anything weighing between 1 and 40 grams (integers only) in his store with his scale and four scale weights. It is asked what can those four scale weights be. The hint is whether the problem can be modelled as regression. Thinking over the hint, I have realised that 4 scale weights can be used either side of the scale (or neither sides), which leaves us with 3 choices: $ {-1,0,1} $. Add to the weight side, substract from or do nothing with the scale weight which creates $3^4 = 81$ cases that are X values. We want to weigth values from 1 to 40, this leaves us with 81 responses adding negative and zero responses as well, and those values creates y vector. If the grocer claims to measure the exact weights, then the errors or $\varepsilon$ values should be equal to zero. Then, we can set a linear regression model with cases and responses and the coefficients or $\beta$ would be the scale weights. Solution can be seen below.
+
+```{r }
+x1 = x2 = x3 = x4 = seq(-1,1,len = 3)
+y = seq(-40,40,len = 81)
+d <- expand.grid(x1,x2,x3,x4) 
+d <- cbind(d,y)
+
+lm(y ~ Var1 + Var2 + Var3 + Var4 , d)
+```
+After fitting the model, we see that the four scale weights are 1, 3, 9 and 27 grams.
+
+## Question 2
+
+Install package *nycflights13*. This package contains airline on-time data for all flights departing NYC and useful 'metadata' on airlines, airports, weather, and planes in 2013. Check out the data sets in the package:
+
+```{r}
+#data(package="nycflights13")
+#?nycflights13::flights
+
+data(flights, package="nycflights13")
+```
+
+
+    i. Find all flights that had an arrival delay of two or more hours and flew to Houston (IAH or HOU) and were operated by United (UA), American (AA), or Delta (DL) and departed in summer (July, August, and September).
+    
+```{r}
+flights %>% 
+  filter(arr_delay >= 120 ) %>% 
+  filter(dest=="IAH" | dest =="HOU") %>% 
+  filter(carrier =="UA" | carrier =="AA" | carrier =="DL") %>% 
+  filter(month <= 9, month >= 7) %>% datatable(style = "bootstrap", options = list(scrollX = TRUE))
+
+```
+
+
+    ii. Show the carriers and the months for the most delayed (arrival) ten flights.
+
+```{r}
+flights %>% 
+  arrange(desc(arr_delay)) %>% 
+  head(10) %>% 
+  select(month, carrier) %>% datatable(style = "bootstrap")
+
+```
+
+   
+    iii. Calculate the average and standard deviation of arrival delays for each carrier in each month. 
+    
+```{r}
+# flights %>% 
+#   group_by(month, carrier) %>% 
+#   summarize(avg_arr_del = mean(arr_delay, na.rm = TRUE), std_arr_del = sd(arr_delay, na.rm = TRUE))
+
+t <- flights %>% 
+  filter(arr_delay > 0) %>% 
+  group_by(month, carrier) %>% 
+  summarize(avg_arr_del = mean(arr_delay, na.rm = TRUE), 
+            std_arr_del = sd(arr_delay, na.rm = TRUE))
+
+t %>% datatable(style = "bootstrap") %>% 
+  formatRound('avg_arr_del', 3) %>% 
+  formatRound('std_arr_del',3)
+```
+ 
+        
+    iiii. (continued with the previous question) Create the following line plots of the average arrival delays over 12 months  for United, American, and Delta Airlines in such a way that
+       
+```{r}
+#?ggplot2::facet_grid
+df <- t %>% filter(carrier =="UA" | carrier =="AA" | carrier =="DL")
+
+df %>% datatable(style = "bootstrap") %>% 
+  formatRound('avg_arr_del', 3) %>% 
+  formatRound('std_arr_del',3)
+```
+
+        a. each carrier is on a separate plot
+        
+```{r}
+ggplot(df, aes(month, avg_arr_del)) + geom_line() + facet_grid(cols = vars(carrier)) + aes(col = carrier)  
+
+```
+
+        b. all carriers are on the same plot, but with different colors:
+
+```{r}
+ggplot(df, aes(month, avg_arr_del)) + geom_line()  + aes(col = carrier) + labs(y = "Average arrival delay", x = "Month")
+
+
+```
+
+

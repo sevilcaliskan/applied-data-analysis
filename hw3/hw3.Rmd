@@ -1,0 +1,104 @@
+---
+title: |
+  Fall 2018\
+  IE 451 Applied Data Analysis
+author: "Taught by Savas Dayanýk"
+pagetitle: IE 451 Applied Data Analysis Fall 2018
+output:
+  bookdown::html_document2:
+    theme: yeti
+    number_sections: no
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    code_folding: show
+    highlight: pygments
+  word_document: default
+---
+
+-----
+
+Assigned on Friday, October 20 2018. Due **Midnight on 22 October 2018**
+
+**Sevil Çalýþkan**
+
+**21701423**
+
+-----
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+library(DT)
+opts_chunk$set(echo = TRUE, collapse=TRUE)
+```
+
+# Homework 3
+
+Answer the 8th question of **Dodgers** lab assignment (Week 04/lab) **below each part here**:
+
+```{r table, fig.cap="The 2012 season data of Dodgers"}
+
+d <- read_csv("dodgers.csv") %>% 
+  mutate_if(is.character, factor) %>% 
+  mutate(day_of_week = factor(day_of_week, levels = c("Monday", "Tuesday", "Wednesday", 
+                                                      "Thursday", "Friday", "Saturday", "Sunday")), 
+         month = factor(month, levels = c("APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT")))
+
+d %>% datatable(options = list(scrollX = TRUE))
+
+```
+# Questions
+
+*Regress **attendance** on **month, day of the week**, and **bobblehead promotion**.*
+```{r}
+
+result <- d %>% lm(formula = attend~month + day_of_week + bobblehead) 
+
+result %>% summary()
+```   
+
+## Question 1
+
+*Is there any evidence for a relationship between attendance and other variables? Why or why not?*
+
+Yes, some of the variables seems to have higher importance on the attendance than others. Looking to the p-values, we see that variables for month being June, day being Tuesday, Saturday or Sunday, and existing of bobblehead promotion significantly affect attendance. Other variables have higher p-values than 0.01, which causes to fail to reject the null hypothesis that $\beta_{variable} = 0$.
+
+## Question 2
+
+*Does the bobblehead promotion have a statistically significant effect on the attendance?*
+   
+Yes, bobblehead promotion seems to increase the attendance quite high (~10000), with a low p-value.   
+
+## Question 3
+
+*Do month and day of week variables help to explain the number of attendants?*
+
+Some days of the week and month June seems to be effective on attendance. On Tuesdays, Saturdays and Sundays, people attend more while Friday may worth to be looked further.
+
+## Question 4 
+  
+*How many fans are expected to be drawn alone by a bobblehead promotion to a home game? Give a 90\% confidence interval.*
+
+$\beta_{bobbleheadYES}$  gives us the expected fans to be drawn alone by a bobblehead promotion. Confidence interval is calculated below. 
+```{r}
+coef(result)[14]
+result %>% confint("bobbleheadYES", level = 0.9)
+```
+    
+## Question 5    
+    
+*Predict the number of attendees to a typical home game on a Wednesday in June if a bobblehead promotion is extended. Give a 90% prediction interval.*
+```{r}
+predict(result, newdata= data.frame(day_of_week = "Wednesday", month= "JUN", bobblehead= "YES"), interval = "prediction", level=0.9)
+```
+
+Fit gives the prediction, lwr and upr columns are for the upper and lower limits of 90% confidence interval.
+   
+   <!-- * How good does the model fit to the data? Why? Comment on residual standard error and R$^2$. Plot observed attendance against predicted attendance. Print the plot as a *PDF* file. -->
+  
+
+
+
+        

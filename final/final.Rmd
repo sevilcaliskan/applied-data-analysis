@@ -1,0 +1,265 @@
+---
+  title: <center> <h3> Fall 2018 </h3> <h2> IE 451 Applied Data Analysis </h2> <h3> taught by Savaş Dayanık </h3>  <h2> Final Examination </h2>  <h3> solved by </h3> <h3> <span style="color:red">*Sevil Çalışkan* </span> </h3>  <h4> <span style="color:red">*21701423* </span> </h4></center>
+  pagetitle: IE 451 Fall 2018 Final Exam
+  date: <center> between 09:00 and 12:00 on Tuesday, 15 January 2019</center>
+  output: 
+    bookdown::html_document2:
+      theme: readable
+      toc: true
+---
+  
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+opts_chunk$set(echo = TRUE)
+```
+
+Answer the following questions. Write your responses below each part in the [Rmd file](final.Rmd). Compress  **Rmd**, **html**, and any data files you may create into a single zip file. Name the zip file with your Bilkent student ID (e.g., 21400023.zip). Upload the zip file to the [IE 451 moodle page](https://moodle.bilkent.edu.tr/2018-2019-fall/).
+
+* Reopen the [Rmd file](final.Rmd) with encoding **UTF-8**.
+* Save your Rmd file with encoding **UTF-8**.
+* You may use your notes, your textbook, or internet.
+* You may NOT seek help from anybody inside or outside classroom in any form.
+* Be sure that **Rmd file** and the **final version of html file** are submitted.
+
+------
+
+<h3> <center> Questions </center> </h3>
+
+We want to find out the factors that affect the number of complaints received from patients about physicians in an emergency room of a hospital. For each of forty four physicians, [*complaints.csv*](complaints.csv) contains information on
+
+patients
+: number of patients seen by the physician
+
+complaints
+: number of patients who complained about the physician
+
+residency
+: is the physician in residency training (Yes or No)
+
+gender
+: gender of the physician
+
+rate
+: hourly income earned by the physician
+
+hours
+: total number of hours worked
+
+
+
+@.  Explore data by giving statistical and graphical summaries. Plot complaint rate against each of the four potential explanatory variables. Comment on the relations.
+```{r}
+d <- read_csv("complaints.csv")
+d <- d %>% mutate(residency = as.factor(residency), gender = as.factor(gender))
+head(d)
+
+d %>% summary
+```
+We see that number of physician in residency training is almost equal to the ones who are not and number of male physicians is much larger than females. Number of complaints are quite low compared to total number of patients.
+```{r, fig.asp=1}
+source("panel.r")
+pairs(d,
+      diag.panel = panel.hist,
+      upper.panel = panel.smooth,
+      lower.panel = panel.cor)
+```
+Hours seems to be left skewed and rate is a little right skewed.
+```{r}
+d2 <- d %>% mutate(complaintrate = complaints / patients)
+
+#par(mfrow =c(2,2))
+d2 %>% ggplot(aes( residency, complaintrate)) +
+  geom_boxplot(aes(fill = residency))
+
+d2 %>% ggplot(aes(gender, complaintrate)) +
+  geom_boxplot(aes(fill = gender))
+
+d2 %>% ggplot(aes(complaintrate, rate)) +
+  geom_point() +
+  geom_density2d()
+
+d2 %>% ggplot(aes(complaintrate, hours)) +
+  geom_point() + 
+  geom_density2d()
+```
+We see from the plots that varience of complaint rates for physicians who are on residency training is larger and rates themselves are also a bit higher than for the pyhsicians who are not, which is expected. Again we see that varience and rates are higher for the male physicians, and this is expected since number of male physicians is almost third times of females. Complatint rate vs rate plot shows multimodal nature with 3 peaks. Hours vs complaint rate plot again shows bimodal nature.
+
+@. Fit an appropriate statistical model.
+Appropriate model would be binomial regression since we can see complaints as failure, and the number of patients who did not complaint as success.
+```{r}
+(res <- glm(cbind(complaints, patients-complaints)~., d, family = binomial))
+
+summary(res)
+
+```
+
+
+     (a) Draw partial residual plots. Check if any transformations of quantitative variables  or adding any interaction terms is necessary.
+```{r}
+plot(res)
+```
+  Residuals plots shows different patterns so we should check for transformation of variables or interaction terms. Looking to the variables rate and hours do not seem to be correlated so they might have an interaction effect. Transforming rate and hours would not make a different since they are not actually skewed but multimodel.
+
+```{r}
+(res1 <- glm(cbind(complaints, patients-complaints)~ gender + residency + hours*rate, d, family = binomial))
+
+summary(res1)
+```
+```{r}
+anova(res, res1, test="LRT")
+```
+We cannot reject first model. So, hours and rate seems not to interacting.
+
+```{r}
+(res2 <- glm(cbind(complaints, patients-complaints)~ gender * residency + hours + rate, d, family = binomial))
+
+summary(res2)
+```
+AIC of the first model is still better.
+
+```{r}
+(res3 <- glm(cbind(complaints, patients-complaints)~ gender + residency * hours + rate, d, family = binomial))
+
+summary(res3)
+```
+AIC in this model seems to better than the first one.
+
+```{r}
+anova(res, res3, test="LRT")
+```
+p-value is larger than 0.01, but still we can reject the first model over the second.
+```{r}
+(res4 <- glm(cbind(complaints, patients-complaints)~ gender + residency * rate + hours, d, family = binomial))
+
+summary(res4)
+```
+Again not interaction evidence.
+
+```{r}
+(res5 <- glm(cbind(complaints, patients-complaints)~ gender * residency + rate + hours, d, family = binomial))
+(res6 <- glm(cbind(complaints, patients-complaints)~ gender *  rate + hours + residency, d, family = binomial))
+(res7 <- glm(cbind(complaints, patients-complaints)~ gender *  hours + residency + hours, d, family = binomial))
+```
+Gender also seems to be interacting with hours.
+
+```{r}
+(res8 <- glm(cbind(complaints, patients-complaints)~ gender *  hours + hours* residency + rate, d, family = binomial))
+
+summary(res8)
+```
+This model is not really different than model3, so let's continue with model 3.
+
+```{r}
+plot(res3)
+```
+Residuals vs Fitted plot seems to be somewhat better. Also, there is not data points which are both outliers and leverage points, so there is no need to remove any point from the data.
+  
+     (a) Is there an association between the number of complaints  and at least one of
+the explanatory variables? State the appropriate null hypothesis and test it.
+```{r}
+anova(update(res3, . ~ 1), res3, test = "LRT")
+```
+We can reject the null hypothesis that there is not any association between the number of complaints and at least one of the explonatory variablesi given the p-value is smaller than 0.01.
+
+     (a) How good does your model fit to the data? Explain.
+```{r}
+set.seed(4)
+sim_res <- simulate(res3, 1000)
+sim_dev <- map_dbl(sim_res, ~deviance(update(res3, data=mutate(d, complaints=.x[,1]))))
+
+sim_dev %>%  density %>% plot(main=NA, xlab="Deviance")
+curve(dchisq(x, df=df.residual(res3)), col="red", add=TRUE)
+abline(v=deviance(res3), lty="dashed")
+mtext(side=1, at=deviance(res3), text=round(deviance(res3),2))
+
+pchisq(deviance(res3), 38, lower.tail = F, log.p = FALSE)
+
+```
+Asymptotic MLE-theory works best for M greater than 30 and patient numbers are much larger than 30. SO, asymptotic MLE-theory should work. p-value shows that model fits to data.
+
+     (a) How does the complaint rate change with the total number of worked hours for a female physician *not* in residency training whose rate equals the 3rd quartile of the rates in the sample? Draw a plot.
+```{r}
+# h <- seq(min(d$hours),max(d$hours), by=10)
+# newdata <- data.frame(cbind(hours = h, gender ="F", residency = "N", rate = 282.3))
+# colnames(newdata) <- c("hours", "gender", "residency", "rate")                 
+# newdata <- newdata %>% mutate(hours = numeric(hours), rate = numeric(rate), gender = factor(gender, levels = c("F","M")), residency = factor(residency, levels = c("Y", "N")))
+
+```
+     
+
+     (a) What are the important factors that affect the number of complaints? Describe the effect of those factors on number of complaints.
+
+@. Replace the categorical variables with dummy variables. Use the features other than patients and complaints to cluster forty four physicians.
+```{r}
+d3 <- d %>% mutate(gender = ifelse(gender =="F",1,0 )) %>% mutate(residency = ifelse(residency == "Y", 1, 0))
+
+head(d3)
+d3.scaled <- d3 %>% select(-complaints, -patients) %>% scale
+head(d3.scaled)
+
+k <- 2:20
+totwss <- map(k, ~kmeans(d3.scaled, center=.x, nstart=50)) %>% 
+  map_dbl("tot.withinss")
+
+plot(totwss ~ k, t="o")
+
+```
+There is not a visible elbow in the plot, its pretty smooth. Lets check silhouette plot.
+```{r}
+library(factoextra)
+fviz_nbclust(d3.scaled, kmeans, method ="silhouette")
+```
+```{r}
+library(cluster)
+res.gap <- clusGap(d3.scaled, kmeans, K.max=20, nstart=50)
+
+plot(res.gap)
+```
+
+
+     (a) How many clusters are there in the dataset? Explain.
+     
+  So, elbow method and gap plot does not really help deciding the number of clusters since in the gap plot, there is not a quite sharp local max and in the elbow method, there is not a sharp elbow visible. Silhouette plot says cluster number should be 5.
+     
+     (a) Draw clusters in space spanned by the first two principal directions of the data.
+  
+```{r}
+#from book
+Cols <- function (vec ){
+  cols = rainbow (length (unique (vec )))
+  return (cols[as.numeric (as.factor (vec))]) 
+}
+km.out <- kmeans(d3.scaled, center=5, nstart=50)
+pr.out <- prcomp (select(d3, -patients,-complaints) , scale=TRUE)
+plot(pr.out$x [,1:2], col = Cols(km.out$cluster), pch =19, xlab ="Z1",ylab="Z2")
+
+```
+     From the plot, physicians seems to be clustered in deed. 
+     
+     (a) Calculate the average number of patient visits, number of complaints, females, rates, and hour worked for each cluster. Tabulate and interpret them.
+```{r}
+clusters <- km.out$cluster
+d4 <- d %>%  mutate(clusters=as.factor(km.out$cluster))  
+head(d4)
+d4  %>%  group_by(clusters) %>% summarise(
+  patients = mean(patients),
+  complaints = mean(complaints),
+  rate = mean(rate),
+  hours = mean(hours), female = sum(gender == "F"))
+```
+We see that female pyhsicians are divided into two clusters. Average number of patients of each cluster seems to be quite different, especially cluster 5 is quite high compared to others. Complaints seems to affect the cluster formation and correlated with number of patients, but in cluster 3 we see that even average number of patients is less than cluster 5, average number of complaints is higher. Cluster 3 and 4 is similar in terms of rate, hour and patients however we see that cluster 4 includes female physicians, so it might be effective in that complaints are less in cluster 4.
+     
+     (a) Compare the boxplots of rates and hours worked for different cluster. Interpret them.
+```{r}
+d4  %>%  ggplot(aes( clusters, rate)) +
+  geom_boxplot(aes(fill = clusters))
+
+d4  %>%  ggplot(aes( clusters, hours)) +
+  geom_boxplot(aes(fill = clusters))
+
+```
+Clusters 3,4 and 5 has the highest working hours while rates are auite low for clusters 3 and 4 compared to 5. Reasons og high complaint rates might be due to high working hours for clusters 3 and 5 and reason that complaints are lower for cluster 4 might be due to it contain female physicians.
+
+------

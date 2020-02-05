@@ -1,0 +1,149 @@
+---
+title: |
+  Fall 2018\
+  IE 451 Applied Data Analysis
+author: "Taught by Savaaþ Dayanýk"
+pagetitle: IE 451 Applied Data Analysis Fall 2018
+output:
+  bookdown::html_document2:
+    theme: yeti
+    number_sections: no
+    toc: no
+    toc_depth: 3
+    toc_float: no
+    code_folding: show
+    highlight: pygments
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+library (ISLR)
+library (MASS)
+library(DT)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+-----
+
+# Homework 5
+
+Assigned on Thursday, November 8, 2018. Due **15:00 on Saturday, November 17, 2018**
+
+**Sevil Çalýþkan**
+
+**21701423**
+
+-----
+## Question 1
+### Exercise 1
+Write code that uses one of the map functions to:
+
+  Compute the mean of every column in mtcars.
+  
+
+```{r cars}
+data("mtcars")
+meanMT <- map_dbl(mtcars, mean)
+meanMT
+#t(meanMT) %>% kable("html", digits = 3, 
+ #                caption = "Column means of Mtcars") %>% 
+  #kable_styling(bootstrap_options = "striped", full_width = F )
+```
+Determine the type of each column in nycflights13::flights.
+  
+```{r}
+flights <- nycflights13::flights
+typeF <- flights %>% map_chr(typeof)
+typeF
+# typeF %>% kable("html", 
+#                 caption = "Data Types of Columns of Flights Data", 
+#                 col.names = c("Data Types")) %>% 
+#   kable_styling(bootstrap_options = "striped", full_width = F )
+```
+Compute the number of unique values in each column of iris.
+  
+```{r}
+data("iris")
+iris %>% map_int(function(x) length(unique(x)))
+# %>% kable("html", 
+#         caption = "Number of Unique Values", col.names = c("Values") ) %>% 
+#   kable_styling(bootstrap_options = "striped", full_width = F )
+```
+  
+Generate 10 random normals for each of µ = -10 ,0 ,10 , and 100 .
+```{r}
+means <- c(-10, 0, 10, 100)
+randlist <- means %>% map(function(x) rnorm(10, mean = x))  
+names(randlist) <- paste(c("µ = -10", "µ = 0", "µ = 10", "µ = 100")) 
+randlist
+```
+### Exercise 2
+How can you create a single vector that for each column in a data frame indicates whether or not it’s a factor?
+```{r}
+breslow <- boot::breslow %>% mutate(smoke = factor(smoke))
+head(breslow)
+  
+vec <- breslow %>% map_lgl(is.factor)
+vec
+```
+**map** creates a list while **map_lgl** creates a vector.
+
+### Exercise 3
+What happens when you use the map functions on vectors that aren’t lists? What does map(1:5, runif) do? Why?
+```{r}
+map(1:5, runif)
+```
+When we use the map functions on vectors that aren’t lists, map function applies the given function over each column or each element if it is a vector. map(1:5, runif) creates uniformly distributed random numbers between 0 and 1 since the first input element of the runif is n, which is the number of observations to be generated. map function sends each element of the vector c(1:5) by one by and runif is iterated for each of them. Since no other input is given, runif uses default range numbers, which is 0 and 1.
+
+### Exercise 4
+What does map(-2:2, rnorm, n = 5) do? Why? What does map_dbl(-2:2, rnorm, n = 5) do? Why?
+```{r}
+map(-2:2, rnorm, n = 5)
+map(map(-2:2, rnorm, n = 1000), mean)
+
+map_dbl(-2:2, rnorm, n = 1)
+
+```
+map(-2:2, rnorm, n = 5) generates 5 random numbers with given means from -2 to 2. In map fucntion, after the function names written, additional arguments to be passed on to function can be entered. In this case, n, number of observation is passed on so for each iteration, 5 observation generated. Next input of rnorm after n is mean, so -2:2 provides mean to rnorm and standard deviation is used as default value, 1. We can prove it by generating 1000 observations and taking the mean.
+
+map_dbl(-2:2, rnorm, n = 5) returns the error *"Error: Result 1 is not a length 1 atomic vector"*. It is because *"each of these map_** functions expects a vector of length one for each element. A result greater than length one for even a single element will result in an error."* Since rnorm returns a vector whose length is given n, if n is not equal to 1, map_dbl returns an error.
+
+###Exercise 5
+Rewrite map(x, function(df) lm(mpg ~ wt, data = df)) to eliminate the anonymous function.
+
+```{r}
+listlm <- list(mtcars, mtcars)
+map(listlm, function(df) lm(mpg ~ wt, data = df)) 
+map(listlm, ~lm(mpg ~ wt, data = .x))
+
+```
+When we supply a formula rather than a function, anonymous function can be eliminated. Up to two arguments can be
+supplied and must be of the form .x and .y.
+
+
+
+## Question 2
+Select $m$ numbers between 1 to 100 at random and without replacement. What should the minimum value of $m$ be so that the probability that at least two of selected numbers are consequitive is greater than 0.5?
+
+There are 99 pairs of consecutive numbers since the smaller number in any pair of consecutive numbers in the set {1,2,3,…,100} cannot exceed 99. At least two of selected numbers should be consecutive, so if we substract the non-consecutive sets from all sets, we find the number of subsets that at least two of them are consecutive. Let's say that we will start choosing in an increasing manner. Once we have chosen an $i$ we Will not chose any number from $i-1$ to $1$. After choosing a number we must not choose the next number and thus choosing $r$ numbers, leaves r-1 numbers of choices. $r$ is the number of objects to be chosen. So we leaving $r-1$ numbers, we have $n-(r-1)$ or $n-r+1$ numbers remaining. We can choose $r$ numbers in ${n-r+1}\choose{r}$ ways.
+$$
+P(At \; least \; two\;  of \; selected \; numbers\;  are\;  consecutive) = \frac{Number \; of \; m-element \; subsets \; that \; are \; non-consecutive }{All  \;possible \; m-element \; subsets}
+$$
+
+```{r}
+m <- 1:33
+
+calcProb <- function(m){
+  allcombs <- factorial(100)/(factorial(100 - m)*factorial(m))
+  nocons <- factorial(100-m+1)/(factorial(100-2*m+1)*factorial(m))
+  return((allcombs-nocons)/allcombs)
+} 
+map_dbl(m,calcProb)
+
+```
+So, $m$ should be 9. 
+

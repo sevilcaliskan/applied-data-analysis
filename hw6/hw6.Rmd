@@ -1,0 +1,260 @@
+---
+title: |
+  Fall 2018\
+  IE 451 Applied Data Analysis
+author: "Taught by SavaÅŸ DayanÄ±k"
+pagetitle: IE 451 Applied Data Analysis Fall 2018
+output:
+  bookdown::html_document2:
+    theme: yeti
+    number_sections: no
+    toc: no
+    toc_depth: 3
+    toc_float: no
+    code_folding: show
+    highlight: pygments
+  word_document: default
+---
+
+-----
+
+# Homework 6
+
+Assigned on Saturday, November 24, 2018. Due 19:00 on Tuesday, November 27, 2018
+
+**Sevil Çalýþkan**
+
+**21701423**
+
+-----
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+library(reshape2)
+library(DT)
+library(ISLR)
+opts_chunk$set(echo = TRUE, collapse=TRUE)
+```
+
+## Question 10
+This question should be answered using the **Weekly** data set, which is part of the **ISLR** package. This data is similar in nature to the **Smarket** data from this chapter’s lab, except that it contains 1, 089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+### Part a
+Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+```{r, fig.cap="Pairwise scatterplots of variables"}
+data("Weekly")
+#?Weekly
+#head(Weekly)
+pairs(Weekly)
+
+                  
+```
+Pairwise scatterplots show that variables does not seem to be linearly correlated. We see that as the years passes, volume increase. 
+```{r, fig.cap="Boxplots of percentage return variables"}
+Weekly %>% 
+  dplyr::select(-Year,-Volume) %>% 
+  melt(id.var = "Direction") %>% 
+  ggplot(aes(variable, value)) +
+  geom_boxplot(aes(fill= Direction)) +
+  theme(legend.position = "top")
+```
+Boxplot shows us for Today feature, "Up"s are above 0 and "Down"s are below it, which is how it should be. However, when we check it for other features, we see that there are not much difference between lag variables. For Today's "Up" values, some of the features are slightly below zero, like Lag1, and for some slightly above zero, like Lag2. So, looking to the boxplots, we cannot say much.
+
+```{r,fig.cap="Histograms of percentage return variables"}
+Weekly %>% 
+  dplyr::select(-Year, -Volume, -Direction) %>% 
+  melt() %>% 
+  ggplot(aes(value,fill=variable)) +
+  geom_histogram() +
+  theme(legend.position = "top")+
+  facet_grid(variable~.)
+
+  
+```
+Histogram shows that Lag variables and Today variable shows a similar dsitribution, as expected. Looking histograms, we do not see a particular shape for variables. All of them lay around zero with long tails. 
+```{r,fig.cap="Density plots of Today and Lag1 divided by Direction variable"}
+Weekly %>% 
+  ggplot(aes(Today, Lag1)) +
+  geom_density2d(aes(col = Direction))
+```
+Plot above shows density plots of Today and Lag1 divided by Direction variable. As we see, Lag1 variable seems to be dense around same level for both directions. Plot is similar for other Lag variables, so they are not given in the report. 
+### Part b
+Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+```{r}
+res <- glm(Direction~.,family = binomial, data=Weekly)
+contrasts(Weekly$Direction)
+summary(res)
+```
+p-values of all of the variables are so high that any of the predictors does not seem to be statistically significant.
+### Part c
+Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you
+about the types of mistakes made by logistic regression.
+```{r}
+probs <- predict (res ,type ="response")
+pred <- rep ("Down" ,length(probs))
+pred[probs >.5] <- "Up"
+direct <- t(dplyr::select(Weekly,Direction))
+table(direct,pred)
+mean(pred == direct )
+
+
+```
+Confusion matrix gives the number of predicted values versus real values. So its diagonal gives the correctly predicted values while other values are for false positives and false negatives. In our case, model seems to be predicting everything correctly with zero false positives and false negatives, which is suspicious.
+
+
+### Part d
+Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+```{r}
+train <- Weekly %>% dplyr::filter( Year < 2009)
+test <- Weekly %>% dplyr::filter( Year >= 2009)
+
+res2 <- glm(Direction~Lag2,family = binomial, data=train)
+summary(res2)
+
+```
+```{r}
+probs2 <- predict (res ,test, type ="response")
+pred2 <- rep ("Down", nrow(test))
+pred2[probs2 >.5] <- "Up"
+direct2 <- t(dplyr::select(test,Direction))
+table(pred2,direct2)
+mean(pred2 == direct2 )
+```
+
+
+## Question 11
+In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+
+### Part a
+Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame() function to create a single data set containing both mpg01 and the other Auto variables.
+
+```{r}
+data("Auto")
+#head(Auto)
+med <- Auto %>% dplyr::select(mpg) %>% data.matrix %>% median
+med
+AutoN <- Auto %>% mutate(mpg01 = ifelse(mpg>med, 1,0)) 
+AutoN %>% datatable
+```
+
+### Part b
+Explore the data graphically in order to investigate the association between mpg01 and the other features. Which of the other features seem most likely to be useful in predicting mpg01? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+```{r, fig.cap="Pairwise scatterplots of Auto data"}
+pairs(AutoN)
+
+```
+Scatter plots shows the variables which differ when **mpg01** 0 or 1, since it is binary. It is hard to interpret the relation between mpg01 and other variables with scatterplots. Boxplots can be more helpful with a binary variable.
+
+```{r, fig.cap="Boxplots of Auto data"}
+AutoN %>% 
+  dplyr::select(-name, -origin) %>% 
+  mutate(mpg01 = factor(mpg01)) %>% 
+  melt(id.var = "mpg01") %>% 
+  ggplot(aes(variable, value)) +
+  geom_boxplot(aes(fill= mpg01)) +
+  theme(legend.position = "top") + 
+  facet_wrap( ~ variable, scales="free")
+```
+We see that all the variables (except name and origin) have different median levels end different inter quartile ranges when mpg01 equals to 0 or 1. So, we can say that high or low values of mpg is related with all the variables. Cylinders, displacement, horsepower and weight seems to be highly related. Since those variables are correlated, it is as expected.
+
+
+### Part c
+Split the data into a training set and a test set.
+```{r}
+ratio <- 0.8
+tr <- ceiling(nrow(AutoN)*ratio)
+shuffled <- AutoN[sample(nrow(AutoN)),]
+trainm <- shuffled[1:tr,] 
+testm <- shuffled[(tr+1):nrow(Auto),]
+
+```
+We can get train and test sets by randomly choosing them from data. Size of training and test sets should be decided beforehand. Since it is common to use the 80% of the data as training and 20% of it as test set, 0.8 is decided to be the ratio of splitting.
+
+### Part f
+Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+
+```{r}
+res3 <- glm( mpg01 ~  displacement + horsepower + weight  ,family = binomial, data=trainm)
+summary(res3)
+
+```
+```{r}
+probs2 <- predict (res3 ,testm, type ="response")
+pred2 <- rep (0, nrow(testm))
+pred2[probs2 >.5] <- 1
+direct2 <- t(dplyr::select(testm,mpg01))
+table(pred2,direct2)
+mean(pred2 == direct2 )
+```
+
+## Question 12
+This problem involves writing functions.
+
+### Part a
+Write a function, Power(), that prints out the result of raising 2 to the 3rd power. In other words, your function should compute $2^3$ and print out the results.
+```{r}
+Power <- function() {
+  print(2^3)
+}
+Power()
+```
+
+### Part b
+Create a new function, Power2(), that allows you to pass any two numbers, x and a, and prints out the value of x^a. 
+```{r}
+Power2 <- function(x,a) {
+  print(x^a)
+}
+Power2(3,8)
+```
+
+### Part c
+Using the Power2() function that you just wrote, compute $10^3$, $8^{17}$, and $131^3$.
+```{r}
+Power2(10,3)
+Power2(8,17)
+Power2(131,3)
+```
+
+### Part d
+Now create a new function, Power3(), that actually returns the result x^a as an R object, rather than simply printing it to the screen. 
+```{r}
+Power3 <- function(x,a) {
+  return(x^a)
+}
+Power3(3,8)
+```
+
+### Part e
+Now using the Power3() function, create a plot of $f(x) = x^2$. The x-axis should display a range of integers from 1 to 10, and the y-axis should display $x^2$. Label the axes appropriately, and use an appropriate title for the figure. Consider displaying either the x-axis, the y-axis, or both on the log-scale. You can do this by using log=‘‘x’’, log=‘‘y’’, or log=‘‘xy’’ as arguments to the plot() function.
+
+```{r, fig.cap="Using Power3() for plots"}
+x <- 1:10
+y <- Power3(x,2)
+plot(x,y, main = "f(x) = x^2 Plot",xlab = "x", ylab = "x^2", type = "l" )
+```
+```{r, fig.cap="Using Power3() for plots"}
+plot(x,y, main = "f(x) = x^2 Plot",xlab = "log(x)", ylab = "x^2", type = "l", log="x" )
+```
+```{r, fig.cap="Using Power3() for plots"}
+plot(x,y, main = "f(x) = x^2 Plot",xlab = "x", ylab = "log(x^2)", type = "l", log="y" )
+```
+
+
+### Part f
+Create a function, PlotPower(), that allows you to create a plot of x against x^a for a fixed a and for a range of values of x. 
+```{r, fig.cap="Using Power3() for plots"}
+PlotPower <- function(x,a) {
+  plot(x, Power3(x,a), main = paste0("f(x) = x^",a," Plot"), xlab = "x", ylab = paste0("x^",a), type = "l")
+}
+PlotPower(1:10,3)
+
+```
+
+-----
+
+    
+
+        

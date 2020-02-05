@@ -1,0 +1,189 @@
+---
+title: |
+  Fall 2018\
+  IE 451 Applied Data Analysis
+author: "Taught by Savaaþ Dayanýk"
+pagetitle: IE 451 Applied Data Analysis Fall 2018
+output:
+  bookdown::html_document2:
+    theme: yeti
+    number_sections: no
+    toc: no
+    toc_depth: 3
+    toc_float: no
+    code_folding: show
+    highlight: pygments
+  word_document: default
+---
+
+-----
+
+# Homework 4
+
+Assigned on Friday, October 26 2018. Due **19:00 on Tuesday, October 30, 2018**
+
+**Sevil Çalýþkan**
+
+**21701423**
+
+-----
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(tidyverse)
+library(knitr)
+library (ISLR)
+library (MASS)
+library(DT)
+library(kableExtra)
+opts_chunk$set(echo = TRUE, collapse=TRUE)
+```
+
+
+
+## Problem 9
+
+```{r auto}
+data(Auto)
+#?Auto
+
+Auto %>% datatable(options = list(scrollX = TRUE))
+
+```
+
+### 9.a
+
+```{r splom, fig.asp = 1, out.width="100%", fig.cap="Pairwise scatter plot of Auto data"}
+#lattice::splom(~Auto)
+pairs(Auto)
+
+```
+
+Looking at the scatter plot matrix at [@fig:splom], we see that some of the variables might be correlated like horsepower and displacement or weight and accelaration.
+
+### 9.b
+```{r corr}
+cor(Auto[,-9]) %>% kable
+```
+
+Correlation matrix shows high correlation values for some of the variables as expected by the look at [@fig:splom].
+
+### 9.c
+```{r}
+fit <- lm( mpg ~ .-name, Auto)
+summary(fit)
+```
+      
+    i. Is there a relationship between the predictors and the response?
+    
+We should check the p-value of the F-test comparing the model with the null one. From the summary, we see that p-value is quite low to say that there is statistical evidence for a relation between predictors and response variable.
+      
+    ii. Which predictors appear to have a statistically significant relationship to the response?
+    
+If we check p-values of the coefficients of each predictor, we can see which ones have significant relationship. Displacement, weight, year and origin seem to have low p-values and significantly related to the response.
+
+    iii. What does the coefficient for the year variable suggest?
+    
+It suggest that, when year increases by 1 unit, response increases by 0.75 unit. 
+
+### 9.d
+```{r, out.width = "120%", fig.cap="Diagnostics"}
+par(mfrow = c(2, 2))
+plot(fit)
+```
+
+      
+
+When we check the residuals vs fitted values, we see that model over estimates for the higher and lower values and under estimates for the middle values. So, we see a nonlinear pattern. Also, variation of residuls does not seem to be constant as it increases as the fitted values increase. Trasnformation might be needed for predictors and response variable.
+
+Second plot shows standard residuals vs theoretical quantiles and we see that some values seems to be away from their theoretical values in the upper right corner. However, standarized residuals vs fitted values plot does not have any value greater than 3, so there seems to be no outlier. Residuals vs levarage plot shows a point with high levarage (point 14).
+
+### 9.e
+```{r}
+lm (mpg ~ .^2 , Auto[,-9]) %>% summary()
+```
+When we check for the interaction effects between all variables, we see a high $R^2$ value but number of significant variables is quite low. So, there must be some variables correlated in the model. As a result, we should take them out from the model. From both scatterplot matrix and correlation matrix, we see that horsepower, displacement, weight and cylinders are highly correlated with each other so including only one of them into the model make sense.
+```{r}
+lm (mpg ~ (displacement + acceleration + year + origin)^2 , Auto[,-9]) %>% summary
+```
+From the new model, we see that interaction of displacement and year does not have a significant effect so we can take it out. 
+```{r}
+lm (mpg ~ (displacement * acceleration + year * origin + acceleration*origin), Auto[,-9]) %>% summary
+```
+Above, we see that all the interaction terms are significant. Displacement and acceleration variables seems insignificant but according to hierarchical principle we should keep them in the model.
+
+### 9.f
+```{r}
+lm (mpg ~ (displacement + acceleration + year + origin ), Auto[,-9]) %>% summary
+```
+Let us use the model without interactions for the transformation purposes. 
+
+```{r}
+lm (mpg ~ I(displacement + acceleration + year + origin )^2, Auto[,-9]) %>% summary
+```
+Looking at the $R^2$ values, we see that $X^2$ trasfomation does not seem to be enhancing the model.
+
+```{r}
+lm (mpg ~ I(sqrt(displacement + acceleration + year + origin )), Auto[,-9]) %>% summary
+```
+Again, trasformation does not enhances the model. We can apply those transformations to predictors individually as well or apply to some leaving other normal.
+
+-----
+
+## Problem 14
+    
+### 14.a
+```{r}
+set.seed (1)
+x1=runif (100)
+x2 =0.5* x1+rnorm (100) /10
+y=2+2* x1 +0.3* x2+rnorm (100)
+```
+
+Form of the linear model is $y = \beta_1x_1 + \beta_2x_2+ \beta_0 + \varepsilon$. In this one $\beta_0$ is 2, $\beta_1$ is 2, $\beta_2$ is 0.3 and $\varepsilon$ is normally distributed around mean 0 and standard deviation 1. rnorm and runif functions will produce 100 values, so y is a vector with 100 values. 
+
+### 14.b
+```{r, fig.cap="Pairwise scatterplots of x1, x2 and y"}
+lattice::splom(data.frame(x1, x2, y))
+cor(data.frame(x1, x2, y)) %>% kable
+```
+Looking to the scatterplots and correlation matrix, we see that x1 and x2 is highly correlated.
+
+### 14.c
+```{r}
+lm(y ~ x1 + x2) %>% summary
+```
+Model calculates $\beta_0 $ as 2.13 which is quite close to the real value 2. For $\beta_1$, it is calculated as 1.43 and $\beta_2 $ is calculated as 1.0097, they seem to be a bit different than their real values 2 and 0.3. If we look at the p-values of coefficients, we see that $\beta_1$ has a p-value less than 0.05, so let's say that we fail to reject the null hypthesis $\beta_1=0$ accepting the significance value 0.01. Also, p-value of $\beta_2$ is higher than both 0.01 and 0.05 so we fail to reject the null hypthesis $\beta_2=0$.
+
+### 14.d
+```{r}
+lm( y ~ x1) %>% summary
+```
+Now we see that $\beta_1$ has closer value to its real value and a p-value less than 0.01, so we can reject the null hypthesis $\beta_1=0$. Since x2 values are small, their effects are probable added in $\beta_0$
+
+### 14.e
+```{r}
+lm( y ~ x2) %>% summary
+```
+For this model, we see that $\beta_1$ is far from its real value. That is because it carries the effect of both x1 and x2, so it is closer to coefficient of x1 from the real model. Same as bove, we see that $\beta_1$ has a p-value less than 0.01, so we can reject the null hypthesis $\beta_1=0$.
+
+### 14.f
+
+Results above shows that both x1 and x2 are related with responce variable y, however when they are together in the regression model, they cancel out each other. It indicates that variables contibutes to the model almost with same amount of information, so if one exist the other one is ot needed in the model. These results actually agree with each other since x1 and x2 is highly correlated.
+
+### 14.g
+```{r}
+x1 = c(x1 , 0.1)
+x2 = c(x2 , 0.8)
+y = c(y,6)
+
+lm( y ~ x1 + x2) %>% summary
+lm( y ~ x1) %>% summary
+lm( y ~ x2) %>% summary
+```
+For all of the model, last point changes the coefficients, so the slope of the lines changes quite much. In order to see that if new point is an outlier or a levarage point or both, we can use diagnostics plots.
+```{r, out.width="120%", fig.cap="Diagnostics"}
+par(mfrow = c(2, 2))
+plot(lm( y ~ x1 + x2))
+```
+Plots show that new point or point 101 does not seem to be an outlier since its residuals seems normal but it is a definitely high-levarage point.
